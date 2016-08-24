@@ -120,6 +120,73 @@ class DicePouch:
         """
         return len(self.dice) + len(self.dropped)
 
+    def reroll_dice(self, dice_val_to_reroll, max_dice_to_reroll=0, keep_results=False):
+        """Reroll a selection of dice, discarding previous result.
+        Args:
+            dice_val_to_reroll: Value of dice to reroll.
+            max_dice_to_reroll: Maximum dice that can be rerolled. 0 means all will be rerolled.
+            keep_results: Set to True to keep previous results in dice pouch.
+        """
+        dice_at_value = self.dice[dice_val_to_reroll];
+        dice_to_reroll = min(max_dice_to_reroll, dice_at_value)
+        
+        rerolled_dice = DicePouch(dice_to_reroll, self.type)
+
+        if keep_results == False:
+            self.dice[dice_val_to_reroll] -= dice_to_reroll
+            self.dropped[dice_val_to_reroll] += dice_to_reroll
+
+        for key in rerolled_dice.keys():
+            if key not in self.dice:
+                self.dice[key] = rerolled_dice.dice[key]
+            self.dice[key] += rerolled_dice.dice[key]
+
+    def get_storyteller_result_string(self, target_num=7, double_min=10):
+        successes = self.addition
+        dropped_str = ""
+        if self.dropped:
+            dropped = self.dropped.items()
+            dfaces = ("+".join([str(face)] * times) for face, times in dropped)
+            dropped_str = "[+%s]" % ("+".join(dfaces),)
+
+        dice_str = ""
+        sorted_x = sorted(self.dice.items(), key=operator.itemgetter(0))
+        for i, count in sorted_x:
+            if len(dice_str):
+                dice_str+=(" ")
+            dice_str+=(str(i)+"x"+str(count))
+            if i >= target_num:
+                successes += count
+                if i >= double_min:
+                    successes += count
+
+        plus_str = ""
+        if base_successes > 0:
+            plus_str+=("+"+str(base_successes))
+        if base_successes < 0:
+            plus_str = str(base_successes)
+
+        success_str = "" 
+        if successes == 0 and self.dice[1] > 0:
+            success_str+=("BOTCH - " + get_botch_message())
+        if successes == 1:
+            success_str+=("1 Success")
+        else:
+            if successes > self.num*.75:
+                success_str+=(str(successes)+" Successes! " + get_great_success_message())
+            elif successes > self.num*1.5:
+                success_str+=(str(successes)+" SUCCESSES!! " + get_miraculous_success_message())
+            else:
+                success_str+=(str(successes)+" Successes")
+
+        return "(%s%s)%s - %s" % (dice_str, dropped_str, plus_str, success_str)
+
+def get_botch_message():
+    return "Dazed... Reeling... About to Break!"
+def get_great_success_message():
+    return "An auspicious effort!"
+def get_miraculous_success_message():
+    return "Sol Invictus watches with pride!"
 
 def _roll_dice(bot, dice_expression):
     result = re.search(
@@ -162,7 +229,6 @@ def _roll_dice(bot, dice_expression):
             bot.reply("I can't drop the lowest %d dice. =(" % drop)
 
     return dice
-
 
 @sopel.module.commands("roll")
 @sopel.module.commands("dice")
@@ -257,3 +323,53 @@ def choose(bot, trigger):
 if __name__ == "__main__":
     from sopel.test_tools import run_example_tests
     run_example_tests(__file__)
+
+@sopel.module.commands("ex")
+@sopel.module.priority("medium")
+@sopel.module.example(".ex 3", 'You roll [3, 6, 7]: 1 Success') #Basic
+@sopel.module.example(".ex 3d0", 'You roll [3, 6, 10]: 1 Successes') #No Doubles
+@sopel.module.example(".ex 3d7", 'You roll [3, 6, 7]: 2 Successes') #Double 7s
+@sopel.module.example(".ex 3t4", 'Target 4: You roll [1, 4, 5]: 2 Successes') #Target number is 4
+@sopel.module.example(".ex 3e10", 'Exploding 10s You roll [3, 6, 10 | *10 | *5]: 4 Successes') #Exploding 10s
+@sopel.module.example(".ex 3r10", 'You roll [1, 6, 10 | *1]: 2 Successes') #Reroll 1s once
+
+BASE_TARGET = "7"
+BASE_DOUBLE = "10"
+BASE_SIDES = "10"
+
+def exRoll(bot, trigger):
+    dice_regexp = r"\d*"
+    op_regexp = r"[dert+-]\d*"
+    if not trigger.group(2):
+        return bot.reply("No dice to roll.")
+    arg_str = trigger.group(2)
+    dice_num = int(re.match(dice_regex, arg_str))
+    if (dice_num < 0):
+        return bot.reply("No dice to roll.")
+
+    target = BASE_TARGET
+    double = BASE_DOUBLE
+    extra_successes = 0
+    exploding = []
+    reroll = []
+
+    operations = re.findall(op_regexp, arg_str)
+    #this should be a lambda
+    for operation in operations:
+        value = operation[1:]
+        if operation[0] == 't':
+            target = int(value);
+        if operation[0] == 'd':
+            double = int(value);
+        if operation[0] == 'e' && exploding.count[value] == 0:
+            exploding.append[int(value)]
+        if operation[0] == 'r' && reroll.count[value] == 0:
+            reroll.append[int(value)]
+        if operation[0] == '+' && reroll.count[value] == 0:
+            extra_successes += int(value);
+        if operation[0] == '-' && reroll.count[value] == 0:
+            extra_successes -= int(value);
+
+    pouch = DicePouch(dice_num, 10, extra_successes)
+    result = pouch.get_storyteller_result_string(target, double, extra_successes)
+    return bot.reply(pouch.get_storyteller_result_string)
