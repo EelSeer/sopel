@@ -167,19 +167,14 @@ class DicePouch:
             plus_str+=("- "+abs(str(self.addition)))
 
         success_str = "" 
-        if successes == 0: 
-            if 1 in self.dice.keys(): 
-                success_str+="BOTCH - "
+        if successes =< 0 and 1 in self.dice.keys(): 
+            success_str+="BOTCH"
         elif successes == 1:
             success_str+=("1 Success")
-        elif successes > self.num*.75:
-            success_str+=(str(successes)+" Successes!")
-        elif successes > self.num*1.5:
-            success_str+=(str(successes)+" SUCCESSES!!")
         else:
             success_str+=(str(successes)+" Successes")
 
-        return "Result: [%s] %s - %s" % (dice_str, plus_str, success_str)
+        return "[%s] %s - %s" % (dice_str, plus_str, success_str)
 
 def _roll_dice(bot, dice_expression):
     result = re.search(
@@ -320,11 +315,9 @@ if __name__ == "__main__":
 @sopel.module.commands("ex")
 @sopel.module.priority("medium")
 @sopel.module.example(".ex 3", 'You roll [3, 6, 7]: 1 Success') #Basic
-@sopel.module.example(".ex 3d0", 'You roll [3, 6, 10]: 1 Successes') #No Doubles
-@sopel.module.example(".ex 3d7", 'You roll [3, 6, 7]: 2 Successes') #Double 7s
-@sopel.module.example(".ex 3t4", 'Target 4: You roll [1, 4, 5]: 2 Successes') #Target number is 4
-@sopel.module.example(".ex 3e10", 'Exploding 10s You roll [3, 6, 10 | *10 | *5]: 4 Successes') #Exploding 10s
-@sopel.module.example(".ex 3r10", 'You roll [1, 6, 10 | *1]: 2 Successes') #Reroll 1s once
+@sopel.module.example(".ex 3 d0", 'You roll [3, 6, 10]: 1 Successes') #No Doubles
+@sopel.module.example(".ex 3 d7", 'You roll [3, 6, 7]: 2 Successes') #Double 7s
+@sopel.module.example(".ex 3 t4", 'Target 4: You roll [1, 4, 5]: 2 Successes') #Target number is 4
 
 def exRoll(bot, trigger):
     dice_regexp = r"\d*"
@@ -353,15 +346,11 @@ def exRoll(bot, trigger):
             target = int(value);
         if operation[0] == 'd':
             double = int(value)
-        if operation[0] == 'e' and exploding.count(value) == 0:
-            exploding.append(int(value))
-        if operation[0] == 'r' and reroll.count(value) == 0:
-            reroll.append(int(value))
         if operation[0] == '+' and reroll.count(value) == 0:
             extra_successes += int(value)
         if operation[0] == '-' and reroll.count(value) == 0:
             extra_successes -= int(value)
 
     pouch = DicePouch(dice_num, 10, extra_successes)
-    result = pouch.get_storyteller_result_string(target, double)
+    result = arg_str+": "+pouch.get_storyteller_result_string(target, double)
     return bot.reply(result)
