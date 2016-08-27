@@ -8,10 +8,9 @@ Licensed under the Eiffel Forum License 2.
 
 http://sopel.chat/
 """
-# from __future__ import unicode_literals, absolute_import, print_function, division
-# import re
-# import operator
-# import sopel.module
+from __future__ import unicode_literals, absolute_import, print_function, division
+from sopel.tools import Ddict
+import sopel.module
 
 class CombatTrackerError(Exception):
     """Errors resulting from tracker method miscalls."""
@@ -138,6 +137,96 @@ class Scene:
         final_string = header
         return final_string
 
+
+__SCENES__ = Ddict()
+"""
+__SCENES__ is just a dictionary for holding data on current scenes.
+"""
+
+@sopel.module.commands("startscene")
+@sopel.module.commands("sscene")
+@sopel.module.example(".sscene", "Started Scene: [CHANNEL_NAME]")
+
+def start_scene(bot, trigger):
+    """Starts a new scene in the sending channel."""
+    if trigger.is_privmsg:
+        return bot.reply("I don't support starting scenes through private messages. Stick to a channel, please.")
+
+    scene_name = trigger.sender
+
+    if scene_name in __SCENES__:
+        return bot.reply("A scene has already started in this channel")
+
+    __SCENES__[scene_name] = Scene()
+    return bot.reply("Started Scene: "+scene_name)
+
+@sopel.module.commands("endscene")
+@sopel.module.commands("escene")
+@sopel.module.example(".escene", "Ended Scene: [CHANNEL_NAME]")
+
+def end_scene(bot, trigger):
+    """Ends the current scene in the sending channel."""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    del __SCENES__[scene_name]
+    return bot.reply("Ended Scene: "+scene_name)
+
+@sopel.module.commands("addactor")
+@sopel.module.commands("aa")
+@sopel.module.example(".aa Actor 7", "Actor added to [CHANNEL_NAME] Scene at 7 Initiative")
+@sopel.module.example(".aa Actor", "Actor added to [CHANNEL_NAME] Scene at 0 Initiative")
+
+def add_actor(bot, trigger):
+    """Adds an actor, with a unique name, to the current scene."""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+@sopel.module.commands("removeactor")
+@sopel.module.commands("ra")
+@sopel.module.example(".ra Actor", "Actor removed from [CHANNEL_NAME]")
+
+def remove_actor(bot, trigger):
+    """Adds an actor, with a unique name, to the current scene."""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+@sopel.module.commands("init")
+@sopel.module.example(".init Actor +7", "Actor gained 7 Initiative")
+@sopel.module.example(".init Actor 7", "Actor set to 7 Initiative")
+@sopel.module.example(".init Actor -7", "Actor lost 7 Initiative")
+@sopel.module.example(".init Actor", "Actor has [INITIATIVE] Initiative")
+
+def adjust_init(bot, trigger):
+    """Adjusts initiative for an actor in the the current scene."""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+@sopel.module.commands("steal")
+@sopel.module.example(".steal Actor1 Actor2 7", "Actor1 stole 7 init from Actor2")
+
+def steal_init(bot, trigger):
+    """One actor steals initiative from another"""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+@sopel.module.commands("showinit")
+def show_init(bot, trigger):
+    """Displays list of actors and their initiatives"""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+#Tests
 def tests():
     """Runs Tests"""
     initiative_table_test()
