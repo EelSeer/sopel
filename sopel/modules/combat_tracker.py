@@ -270,7 +270,7 @@ def remove_actor(bot, trigger):
 
     actor = scene.actors[actor_name]
     scene.remove_actor(actor)
-    return bot.reply(actor_name+" removed from "+scene_name+" Scene")
+    return bot.reply(actor_name+" removed from scene")
 
 @sopel.module.commands("init")
 
@@ -312,6 +312,12 @@ def adjust_init(bot, trigger):
     else:
         scene.set_actor_initiative(actor, mod)
 
+    reply_name = actor_name
+    last_char = actor_name[len(reply_name)-1]
+    if last_char is 's':
+        reply_name = reply_name + '\''
+    else:
+        reply_name = reply_name + '\'s'
     return bot.reply(str(actor_name)+" init set to "+str(actor.initiative))
 
 @sopel.module.commands("steal")
