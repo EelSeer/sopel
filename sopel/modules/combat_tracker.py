@@ -130,6 +130,8 @@ class Scene:
         table = ""
 
         for initiative in keys:
+            if self.tick is initiative:
+                table = table+""
             table = table+(" ["+str(initiative)+":")
             add_comma = False
             for actor in self.initiatives[initiative]:
@@ -138,6 +140,8 @@ class Scene:
                 table = table+" "+actor.charname
                 add_comma = True
             table = table+"]"
+            if self.tick is initiative:
+                table = table+""
         final_string = final_string + table
         return final_string
 
