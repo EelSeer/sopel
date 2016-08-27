@@ -130,10 +130,14 @@ class Scene:
         table = ""
 
         for initiative in keys:
+            table = table+(" ["+str(initiative)+":")
+            add_comma = False
             for actor in self.initiatives[initiative]:
-                table = table+("\n"+actor.get_init_string())
-                if initiative is self.tick:
-                    table = table + " [Active]"
+                if add_comma:
+                    table = table+","
+                table = table+" "+actor.charname
+                add_comma = True
+            table = table+"]"
         final_string = final_string + table
         return final_string
 
@@ -344,16 +348,17 @@ def add_remove_actor_test():
         print("Add_Remove_Actor_Test Failed")
 
 def modify_initiative_test():
+    """Test that messes around with init a bunch."""
     scene = Scene()
-    a1 = Actor("Lee", 4)
-    a2 = Actor("Bob", 6)
-    scene.add_actor(a1)
-    scene.add_actor(a2)
-    scene.set_actor_initiative(a1, 9)
-    scene.set_actor_initiative(a2, -1)
+    lee = Actor("Lee", 4)
+    bob = Actor("Bob", 6)
+    scene.add_actor(lee)
+    scene.add_actor(bob)
+    scene.set_actor_initiative(lee, 9)
+    scene.set_actor_initiative(bob, -1)
     print(scene.get_initiative_table_string())
-    scene.remove_actor(a1)
-    scene.remove_actor(a2)
+    scene.remove_actor(lee)
+    scene.remove_actor(bob)
 
 def initiative_table_test():
     """Tests displaying initiative table"""
