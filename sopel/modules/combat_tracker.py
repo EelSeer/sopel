@@ -140,7 +140,7 @@ class Scene:
 
 __SCENES__ = Ddict()
 """
-__SCENES__ is just a dictionary for holding data on active scene data.
+__SCENES__ is just a dictionary for holding data on active scene data. Is there a better way?
 """
 
 @sopel.module.commands("startscene")
@@ -248,7 +248,9 @@ def show_init(bot, trigger):
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
-    return bot.reply("Not Implemented Yet")
+    scene = __SCENES__[scene_name]
+    table_string = scene.get_initiative_table_string
+    return bot.reply(table_string)
 
 #Tests
 def tests():
