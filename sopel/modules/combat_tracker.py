@@ -113,10 +113,14 @@ class Scene:
         Actors that have not acted yet but have an initiative value higher than the current
         tick must be queued up to act next."""
         self.initiatives[actor.initiative].remove(actor)
+        if not len(self.initiatives[actor.initiative]):
+            del self.initiatives[actor.initiative]
         actor.initiative = new_init
         if actor.initiative > self.tick and not actor.has_acted:
             self.overriding_action_queue.append(actor)
-        self.initiatives[actor.initiative].add(actor)
+        if actor.initiative not in self.initiatives:
+            self.initiatives[actor.initiative] = []
+        self.initiatives[actor.initiative].append(actor)
 
     def get_initiative_table_string(self, active_tick_only=False):
         """Returns a formatted table of current initiatives"""
@@ -300,7 +304,7 @@ def adjust_init(bot, trigger):
     else:
         scene.set_actor_initiative(actor, mod)
 
-    return bot.reply(actor_name+" init set to "+actor.initiative)
+    return bot.reply(str(actor_name)+" init set to "+str(actor.initiative))
 
 @sopel.module.commands("steal")
 
@@ -320,7 +324,7 @@ def show_init(bot, trigger):
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
     scene = __SCENES__[scene_name]
-    table_string = scene.get_initiative_table_string
+    table_string = scene.get_initiative_table_string()
     return bot.reply(table_string)
 
 #Tests
@@ -328,6 +332,7 @@ def tests():
     """Runs Tests"""
     initiative_table_test()
     add_remove_actor_test()
+    modify_initiative_test()
 
 def add_remove_actor_test():
     """Tests add/remove actor methods."""
@@ -337,6 +342,18 @@ def add_remove_actor_test():
     scene.remove_actor(lee)
     if len(scene.actors):
         print("Add_Remove_Actor_Test Failed")
+
+def modify_initiative_test():
+    scene = Scene()
+    a1 = Actor("Lee", 4)
+    a2 = Actor("Bob", 6)
+    scene.add_actor(a1)
+    scene.add_actor(a2)
+    scene.set_actor_initiative(a1, 9)
+    scene.set_actor_initiative(a2, -1)
+    print(scene.get_initiative_table_string())
+    scene.remove_actor(a1)
+    scene.remove_actor(a2)
 
 def initiative_table_test():
     """Tests displaying initiative table"""
