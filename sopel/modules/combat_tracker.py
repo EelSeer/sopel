@@ -140,7 +140,7 @@ class Scene:
 
 __SCENES__ = Ddict()
 """
-__SCENES__ is just a dictionary for holding data on current scenes.
+__SCENES__ is just a dictionary for holding data on active scene data.
 """
 
 @sopel.module.commands("startscene")
@@ -172,6 +172,29 @@ def end_scene(bot, trigger):
     del __SCENES__[scene_name]
     return bot.reply("Ended Scene: "+scene_name)
 
+@sopel.module.commands("loadscene")
+@sopel.module.commands("lscene")
+@sopel.module.example(".lscene SCENE_NAME", "Loaded Scene: SCENE_NAME in channel [CHANNEL_NAME]")
+
+def load_scene(bot, trigger):
+    """Loads the scene for the name given in the current channel from
+    its previous state."""
+    scene_name = trigger.sender
+    if scene_name in __SCENES__:
+        return bot.reply("A scene has already started in this channel")
+    return bot.reply("Not Implemented Yet")
+
+@sopel.module.commands("savescene")
+@sopel.module.example(".savescene SCENE_NAME", "Saved Scene: SCENE_NAME from channel [CHANNEL_NAME]")
+
+def save_scene(bot, trigger):
+    """Saves the scene for the name given in the current channel.
+    Scene is not ended, and will be autosaved when it is."""
+    scene_name = trigger.sender
+    if scene_name not in __SCENES__:
+        return bot.reply("No scene has started in this channel")
+    return bot.reply("Not Implemented Yet")
+
 @sopel.module.commands("addactor")
 @sopel.module.commands("aa")
 @sopel.module.example(".aa Actor 7", "Actor added to [CHANNEL_NAME] Scene at 7 Initiative")
@@ -186,6 +209,7 @@ def add_actor(bot, trigger):
 
 @sopel.module.commands("removeactor")
 @sopel.module.commands("ra")
+@sopel.module.commands("kill")
 @sopel.module.example(".ra Actor", "Actor removed from [CHANNEL_NAME]")
 
 def remove_actor(bot, trigger):
