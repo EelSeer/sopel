@@ -167,7 +167,7 @@ class DicePouch:
             plus_str+=("- "+abs(str(self.addition)))
 
         success_str = "" 
-        if successes =< 0 and 1 in self.dice.keys(): 
+        if successes <= 0 and 1 in self.dice.keys(): 
             success_str+="BOTCH"
         elif successes == 1:
             success_str+=("1 Success")
