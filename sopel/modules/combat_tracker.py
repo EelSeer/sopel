@@ -117,12 +117,13 @@ class Scene:
             self.overriding_action_queue.append(actor)
         self.initiatives[actor.initiative].add(actor)
 
-    def get_initiative_table_string(self):
+    def get_initiative_table_string(self, active_tick_only=False):
         """Returns a formatted table of current initiatives"""
         header = "[Round: "+str(self.round)+" - Tick: "+str(self.tick)+"]"
         final_string = header
-        keys = sorted(list(self.initiatives.keys()), reverse=True)
+        keys = [self.tick] if active_tick_only else sorted(list(self.initiatives.keys()), reverse=True)
         table = ""
+
         for initiative in keys:
             for actor in self.initiatives[initiative]:
                 table = table+("\n"+actor.get_init_string())
