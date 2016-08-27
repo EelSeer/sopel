@@ -9,6 +9,8 @@ Licensed under the Eiffel Forum License 2.
 http://sopel.chat/
 """
 from __future__ import unicode_literals, absolute_import, print_function, division
+import re
+
 from sopel.tools import Ddict
 import sopel.module
 
@@ -145,12 +147,11 @@ __SCENES__ is just a dictionary for holding data on active scene data. Is there 
 
 @sopel.module.commands("startscene")
 @sopel.module.commands("sscene")
-@sopel.module.example(".sscene", "Started Scene: [CHANNEL_NAME]")
 
 def start_scene(bot, trigger):
     """Starts a new scene in the sending channel."""
     if trigger.is_privmsg:
-        return bot.reply("I don't support starting scenes through private messages. Stick to a channel, please.")
+        return bot.reply("I don't support starting scenes through private messages yet. Stick to a channel, please.")
 
     scene_name = trigger.sender
 
@@ -162,7 +163,6 @@ def start_scene(bot, trigger):
 
 @sopel.module.commands("endscene")
 @sopel.module.commands("escene")
-@sopel.module.example(".escene", "Ended Scene: [CHANNEL_NAME]")
 
 def end_scene(bot, trigger):
     """Ends the current scene in the sending channel."""
@@ -174,7 +174,6 @@ def end_scene(bot, trigger):
 
 @sopel.module.commands("loadscene")
 @sopel.module.commands("lscene")
-@sopel.module.example(".lscene SCENE_NAME", "Loaded Scene: SCENE_NAME in channel [CHANNEL_NAME]")
 
 def load_scene(bot, trigger):
     """Loads the scene for the name given in the current channel from
@@ -185,7 +184,6 @@ def load_scene(bot, trigger):
     return bot.reply("Not Implemented Yet")
 
 @sopel.module.commands("savescene")
-@sopel.module.example(".savescene SCENE_NAME", "Saved Scene: SCENE_NAME from channel [CHANNEL_NAME]")
 
 def save_scene(bot, trigger):
     """Saves the scene for the name given in the current channel.
@@ -197,46 +195,118 @@ def save_scene(bot, trigger):
 
 @sopel.module.commands("addactor")
 @sopel.module.commands("aa")
-@sopel.module.example(".aa Actor 7", "Actor added to [CHANNEL_NAME] Scene at 7 Initiative")
-@sopel.module.example(".aa Actor", "Actor added to [CHANNEL_NAME] Scene at 0 Initiative")
 
 def add_actor(bot, trigger):
-    """Adds an actor, with a unique name, to the current scene."""
+    """Adds an actor, with a unique name and an init score to the current scene.
+    .addactor <name>
+    .addactor <name> <init>"""
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
-    return bot.reply("Not Implemented Yet")
+
+    scene = __SCENES__[scene_name]
+
+    if not trigger.group(2):
+        return bot.reply("Please specify a name for your actor.")
+
+    #split string into substrings
+    arg_str = trigger.group(2)
+    args = arg_str.split(' ')
+    actor_name = args[0]
+
+    #reject if actor already exists
+    if actor_name in scene.actors:
+        return bot.reply(actor_name+" has already been added to the scene.")
+
+    #figure out if there's an init modifier
+    mod = 0
+    if len(args) > 1:
+        reg_exp = r"\A[+-]?\d+\Z"
+        mod_match = re.match(reg_exp, args[1])
+        if mod_match.group(0):
+            mod = int(mod_match.group(0))
+
+    #create and add the actor to the active scene
+    actor = Actor(actor_name, mod)
+    scene.add_actor(actor)
+
+    return bot.reply(actor_name+" added to "+scene_name+" Scene at "+str(mod)+" Initiative")
 
 @sopel.module.commands("removeactor")
 @sopel.module.commands("ra")
 @sopel.module.commands("kill")
-@sopel.module.example(".ra Actor", "Actor removed from [CHANNEL_NAME]")
 
 def remove_actor(bot, trigger):
-    """Adds an actor, with a unique name, to the current scene."""
+    """Removes an actor from the the current scene.
+    .ra <name>"""
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
-    return bot.reply("Not Implemented Yet")
+    if not trigger.group(2):
+        return bot.reply("Please specify a name for the actor to be removed.")
+
+    scene = __SCENES__[scene_name]
+
+    #split string into substrings and get first
+    arg_str = trigger.group(2)
+    args = arg_str.split(' ')
+    actor_name = args[0]
+
+    #reject if actor does not exist
+    if actor_name not in scene.actors:
+        return bot.reply(actor_name+" is not in the scene.")
+
+    actor = scene.actors[actor_name]
+    scene.remove_actor(actor)
+    return bot.reply(actor_name+" removed from "+scene_name+" Scene")
 
 @sopel.module.commands("init")
-@sopel.module.example(".init Actor +7", "Actor gained 7 Initiative")
-@sopel.module.example(".init Actor 7", "Actor set to 7 Initiative")
-@sopel.module.example(".init Actor -7", "Actor lost 7 Initiative")
-@sopel.module.example(".init Actor", "Actor has [INITIATIVE] Initiative")
 
 def adjust_init(bot, trigger):
-    """Adjusts initiative for an actor in the the current scene."""
+    """Adjusts initiative for an actor in the the current scene.
+     .init <name> +<value> adds value to init
+     .init <name> -<value> subtractes value from init
+     .init <name> <value> sets init to value"""
+
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
-    return bot.reply("Not Implemented Yet")
+    if not trigger.group(2):
+        return bot.reply("Please specify a name for the actor")
+
+    scene = __SCENES__[scene_name]
+
+    #split string into substrings and get first
+    arg_str = trigger.group(2)
+    args = arg_str.split(' ')
+    actor_name = args[0]
+
+    #figure out the init modifier and if it is arithmetical
+    mod = 0
+    is_arithmetical = False
+
+    if len(args) > 1:
+        reg_exp = r"\A[+-]?\d+\Z"
+        mod_match = re.match(reg_exp, args[1])
+        if mod_match.group(0):
+            mod_str = mod_match.group(0)
+            if mod_str[0] is '+' or mod_str[0] is '-':
+                is_arithmetical = True
+            mod = int(mod_str)
+
+    actor = scene.actors[actor_name]
+    if is_arithmetical:
+        scene.add_actor_initiative(actor, mod)
+    else:
+        scene.set_actor_initiative(actor, mod)
+
+    return bot.reply(actor_name+" init set to "+actor.initiative)
 
 @sopel.module.commands("steal")
-@sopel.module.example(".steal Actor1 Actor2 7", "Actor1 stole 7 init from Actor2")
 
 def steal_init(bot, trigger):
-    """One actor steals initiative from another"""
+    """One actor steals initiative from another
+    .steal <name1> <name2> <value>"""
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
@@ -244,7 +314,8 @@ def steal_init(bot, trigger):
 
 @sopel.module.commands("showinit")
 def show_init(bot, trigger):
-    """Displays list of actors and their initiatives"""
+    """Displays list of actors and their initiatives
+    .showinit"""
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
