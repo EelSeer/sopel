@@ -97,12 +97,22 @@ class Scene:
         for actor in self.actors:
             actor.has_acted = False
 
-    def actor_initiative_change(self, actor, modifier):
+    def steal_actor_initiative(self, actor1, actor2, value):
+        """Actor one steals a number of initiative points from actor 2."""
+        self.add_actor_initiative(actor1, value)
+        self.add_actor_initiative(actor2, -value)
+
+    def add_actor_initiative(self, actor, value):
+        """Changes an actors initiative value according to the value"""
+        new_init = actor.initiative + value
+        self.set_actor_initiative(actor, new_init)
+
+    def set_actor_initiative(self, actor, new_init):
         """Changes an actors initiative value, potentially changing its action timing.
         Actors that have not acted yet but have an initiative value higher than the current
         tick must be queued up to act next."""
         self.initiatives[actor.initiative].remove(actor)
-        actor.initiative = actor.initiative + modifier
+        actor.initiative = new_init
         if actor.initiative > self.tick and not actor.has_acted:
             self.overriding_action_queue.append(actor)
         self.initiatives[actor.initiative].add(actor)
