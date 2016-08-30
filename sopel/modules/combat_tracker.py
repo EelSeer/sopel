@@ -328,7 +328,36 @@ def steal_init(bot, trigger):
     scene_name = trigger.sender
     if scene_name not in __SCENES__:
         return bot.reply("No scene has started in this channel")
-    return bot.reply("Not Implemented Yet")
+    if not trigger.group(2):
+        return bot.reply("Please specify a name for the actor")
+
+    scene = __SCENES__[scene_name]
+
+    #split string into substrings and get first
+    arg_str = trigger.group(2)
+    args = arg_str.split(' ')
+    if len(args) < 3:
+        return bot.reply("Invalid parameters for init stealing")
+    actor1_name = args[0]
+    actor2_name = args[1]
+
+    actor1 = scene.actors[actor1_name]
+    actor2 = scene.actors[actor2_name]
+
+    if not actor1:
+        return bot.reply(actor1_name+" not found in active scene.")
+    if not actor2:
+        return bot.reply(actor2_name+" not found in active scene.")
+
+    init_value = args[2]
+    reg_exp = r"\A\d+\Z"
+    mod_match = re.match(reg_exp, init_value)
+    if not mod_match.group(0):
+        return bot.reply("Invalid parameters for init value")
+    mod = int(mod_match.group(0))
+
+    scene.steal_actor_initiative(actor1, actor2, mod)
+    return bot.reply(actor1_name+" stole "+str(mod)+" initiative from "+actor2_name)
 
 @sopel.module.commands("showinit")
 def show_init(bot, trigger):
