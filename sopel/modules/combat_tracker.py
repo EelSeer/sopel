@@ -124,7 +124,7 @@ class Scene:
 
     def get_initiative_table_string(self, active_tick_only=False):
         """Returns a formatted table of current initiatives"""
-        header = "[Round: "+str(self.round)+" - Tick: "+str(self.tick)+"]"
+        header = "[Round: "+str(self.round)+" - Tick: "+str(self.tick)+"]:"
         final_string = header
         keys = [self.tick] if active_tick_only else sorted(list(self.initiatives.keys()), reverse=True)
         table = ""
@@ -270,6 +270,7 @@ def remove_actor(bot, trigger):
 
     actor = scene.actors[actor_name]
     scene.remove_actor(actor)
+
     return bot.reply(actor_name+" removed from scene")
 
 @sopel.module.commands("init")
